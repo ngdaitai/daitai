@@ -1,0 +1,93 @@
+# MIME Types for static files
+<IfModule mod_mime.c>
+    AddType text/css .css
+    AddType application/javascript .js
+    AddType application/json .json
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+    AddType image/gif .gif
+    AddType image/svg+xml .svg
+    AddType image/x-icon .ico
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+    AddType font/ttf .ttf
+    AddType font/eot .eot
+</IfModule>
+
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Backend API routes - serve directly
+    RewriteCond %{REQUEST_URI} ^/backend/
+    RewriteRule ^ - [L]
+    
+    # Public assets - serve directly
+    RewriteCond %{REQUEST_URI} ^/public/
+    RewriteRule ^ - [L]
+    
+    # Serve static files from dist/ folder
+    # CSS files
+    RewriteCond %{REQUEST_URI} \.(css)$ [NC]
+    RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ /dist/$1 [L]
+    
+    # JS files (including module scripts)
+    RewriteCond %{REQUEST_URI} \.(js)$ [NC]
+    RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ /dist/$1 [L]
+    
+    # Images and other assets
+    RewriteCond %{REQUEST_URI} \.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$ [NC]
+    RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ /dist/$1 [L]
+    
+    # Assets folder (for Vite build output)
+    RewriteCond %{REQUEST_URI} ^/assets/
+    RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ /dist/$1 [L]
+    
+    # Images folder
+    RewriteCond %{REQUEST_URI} ^/images/
+    RewriteCond %{DOCUMENT_ROOT}/dist%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ /dist/$1 [L]
+    
+    # Serve existing files directly (fallback)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+    
+    # For SPA: serve index.html for all other routes (non-file requests)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/backend/
+    RewriteCond %{REQUEST_URI} !^/dist/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ /dist/index.html [L]
+</IfModule>
+
+# PHP Settings
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "\.(env|log|sql|md)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
